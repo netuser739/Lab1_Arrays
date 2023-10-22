@@ -1,9 +1,10 @@
 #include <iostream>
 #include <random>
 #include <ctime>
+#include <chrono>
 #include <SFML/Graphics.hpp>
 #include <windows.h>
-//#include <cmath>
+#include <cmath>
 
 using namespace std;
 using namespace sf;
@@ -12,7 +13,7 @@ const int H = 600;
 const int W = 900;
 const float p = 0.05;
 
-void LowToUpArray(int *array, int size, int minValue, int maxValue) {
+void LowToUpArray(int* array, int size, int minValue, int maxValue) {
     if (size >= (maxValue - minValue + 1)) {
         for (int i = 0; i < size; i++) {
             array[i] = minValue;
@@ -31,7 +32,7 @@ void LowToUpArray(int *array, int size, int minValue, int maxValue) {
     }
 }
 
-void UpToLowArray(int *array, int size, int minValue, int maxValue) {
+void UpToLowArray(int* array, int size, int minValue, int maxValue) {
     if (size >= (maxValue - minValue + 1)) {
         for (int i = 0; i < size; i++) {
             array[i] = maxValue;
@@ -53,93 +54,34 @@ void UpToLowArray(int *array, int size, int minValue, int maxValue) {
     }
 }
 
-void RandomArray(int *array, int size, int minValue, int maxValue) {
+void RandomArray(int* array, int size, int minValue, int maxValue) {
     for (int i = 0; i < size; i++) {
         array[i] = (double)rand() / RAND_MAX * (maxValue - minValue) + minValue;
     }
 }
 
-void SawArray(int *array, int size, int minValue, int maxValue, int step) {
-    int h;
-    if (size % step == 0) h = size / step;
-    else h = size / step + 1;
-
-    for (int j = 0; j < h; j++) {
-        if (step >= (maxValue - minValue + 1)) {
-            for (int i = step * j; i < step * (j + 1) || i < size; i++) {
-                array[i] = minValue;
-                if (minValue < maxValue)
-                    minValue++;
-            }
+void SawArray(int* array, int size, int minValue, int maxValue, int step) {
+    int dif = (maxValue - minValue) / step;
+    array[0] = minValue;
+    for (int i = 1; i < size; i++) {
+        if (array[i - 1] == maxValue || array[i - 1] > maxValue) {
+            array[i] = minValue;
         }
         else {
-            int left = minValue;
-            int right = maxValue - size + 1;
-            for (int i = step * j; i < step * (j + 1) || i < size; i++) {
-                array[i] = (double)rand() / RAND_MAX * (right - left) + left;
-                left = array[i] + 1;
-                right++;
-            }
+            array[i] = array[i - 1] + dif;
         }
     }
 }
 
-void SinArray(int *array, int size, int minValue, int maxValue, int step) {
-    int h;
-    if (size % step == 0) h = size / step;
-    else h = size / step + 1;
-
-    int h2, h3;
-    if (step % 2 == 0) h2 = h3 = step / 2;
-    else {
-        h2 = step / 2;
-        h3 = h2 + 1;
-    }
-
-    int left = minValue;
-    int right = maxValue;
-
-    for (int j = 0; j < h; j++) {
-        if (h2 >= (right - left + 1)) {
-            for (int i = (h2 + h3) * j; i < h2 * (j + 1) + h3 * j; i++) {
-                array[i] = left;
-                if (left < right)
-                    left++;
-            }
-        }
-        else {
-            left = minValue;
-            right = maxValue - size + 1;
-            for (int i = (h2 + h3) * j; i < h2 * (j + 1) + h3 * j; i++) {
-                array[i] = (double)rand() / RAND_MAX * (right - left) + left;
-                left = array[i] + 1;
-                right++;
-            }
-        }
-
-        if (h3 >= (right - left + 1)) {
-            for (int i = h2 * (j + 1) + h3 * j; i < h2 * (j + 1) + h3 * (j + 1); i++) {
-                array[i] = right;
-                if (left < right)
-                    right--;
-            }
-        }
-        else {
-            left = maxValue - size + 1;
-            right = maxValue;
-            for (int i = h2 * (j + 1) + h3 * j; i < h2 * (j + 1) + h3 * (j + 1); i++) {
-                array[i] = (double)rand() / RAND_MAX * (right - left) + left;
-                right = array[i] - 1;
-                if (left > size)
-                    left = right - size + 1;
-                else
-                    left--;
-            }
-        }
+void SinArray(int* array, int size, int minValue, int maxValue, int step) {
+    int ymove = (minValue + maxValue) / 2;
+    int arc = maxValue - ymove;
+    for (int i = 0; i < size; i++) {
+        array[i] = sin(i) * arc + ymove;
     }
 }
- 
-void StepArray(int *array, int size, int minValue, int maxValue, int step) {
+
+void StepArray(int* array, int size, int minValue, int maxValue, int step) {
     int h;
     if (size % step == 0) h = size / step;
     else h = size / step + 1;
@@ -156,24 +98,56 @@ void StepArray(int *array, int size, int minValue, int maxValue, int step) {
     }
 }
 
+void FunctionCall(void(*funcArr[])(int*, int, int, int), void(*funcStepArr[])(int*, int, int, int, int), int size) {
+    
+    int* arr = new int[size];
+    chrono::steady_clock::time_point begin, end;
+    chrono::microseconds timeDiff;
+
+    srand(time(NULL) + GetTickCount());
+
+    for (int j = 0; j < 1; j++) {
+        for (int i = 0; i < 3; i++) {
+            begin = chrono::steady_clock::now();
+            funcArr[i](arr, size, 0, 100);
+            end = chrono::steady_clock::now();
+            timeDiff = chrono::duration_cast<chrono::microseconds>(end - begin);
+            cout << funcArr[i] << " time: " << timeDiff.count() << endl;
+        }
+
+        for (int i = 0; i < 3; i++) {
+            begin = chrono::steady_clock::now();
+            funcStepArr[i](arr, size, 0, 100, 8);
+            end = chrono::steady_clock::now();
+            timeDiff = chrono::duration_cast<chrono::microseconds>(end - begin);
+            cout << funcStepArr[i] << " time: " << timeDiff.count() << endl;
+        }
+    }
+}
+
 int main()
 {
+    int size = 300;
+    //int* arr = new int[size];
 
-    int size = 150;
-    int* arr = new int[size];
-    srand(time(NULL) + GetTickCount());
-    //LowToUpArray(arr, size, 1, 99);
-    //UpToLowArray(arr, size, 1, 99);
-    //RandomArray(arr, size, 1, 99);
-    //SawArray(arr, size, 1, 200, 10);
-    //StepArray(arr, size, 0, 200, 15);
-    SinArray(arr, size, 10, 300, 4);
+    void(*funcArr[])(int*, int, int, int) = {LowToUpArray, UpToLowArray, RandomArray};
+    void(*funcStepArr[])(int*, int, int, int, int) = {SawArray, StepArray, SinArray };
 
-    for (int i = 0; i < size; i++) {
+    //LowToUpArray(arr, size, 1, 50, 0);
+    //UpToLowArray(arr, size, 1, 99, 0);
+    //RandomArray(arr, size, 1, 99, 0);
+    //SawArray(arr, size, 10, 100, 10);
+    //StepArray(arr, size, 0, 200, 25);
+    //SinArray(arr, size, 10, 40, 4);
+
+    /*for (int i = 0; i < size; i++) {
         cout << arr[i] << ' ';
-    }
+    }*/
 
-    RenderWindow window(VideoMode(W, H), "Graphic");
+    FunctionCall(funcArr, funcStepArr, size);
+
+#pragma region Graphic
+    /*RenderWindow window(VideoMode(W, H), "Graphic");
 
     int x0 = W * p;
     int y0 = H / 2;
@@ -189,7 +163,7 @@ int main()
 
     OX.setFillColor(Color::Black);
     OY.setFillColor(Color::Black);
-    
+
     OX.setPosition(x0, y0);
     OY.setPosition(x0, H * p);
 
@@ -212,5 +186,7 @@ int main()
         window.display();
     }
 
-    return 0;
+    return 0;*/
+#pragma endregion
+
 }
