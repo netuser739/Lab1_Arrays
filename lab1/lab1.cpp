@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <ctime>
 #include <chrono>
@@ -103,32 +104,42 @@ void FunctionCall(void(*funcArr[])(int*, int, int, int), void(*funcStepArr[])(in
     int* arr = new int[size];
     chrono::steady_clock::time_point begin, end;
     chrono::microseconds timeDiff;
-
+    
     srand(time(NULL) + GetTickCount());
+    
+    ofstream fin;
+    fin.open("test.txt");
 
-    for (int j = 0; j < 1; j++) {
-        for (int i = 0; i < 3; i++) {
-            begin = chrono::steady_clock::now();
-            funcArr[i](arr, size, 0, 100);
-            end = chrono::steady_clock::now();
-            timeDiff = chrono::duration_cast<chrono::microseconds>(end - begin);
-            cout << funcArr[i] << " time: " << timeDiff.count() << endl;
-        }
+    fin << "LowToUp\tUpToLow\tRandom\tSaw\tStep\tSin" << endl;
 
-        for (int i = 0; i < 3; i++) {
-            begin = chrono::steady_clock::now();
-            funcStepArr[i](arr, size, 0, 100, 8);
-            end = chrono::steady_clock::now();
-            timeDiff = chrono::duration_cast<chrono::microseconds>(end - begin);
-            cout << funcStepArr[i] << " time: " << timeDiff.count() << endl;
+    if (fin.is_open()) {
+        for (int j = 0; j < 100; j++) {
+            for (int i = 0; i < 3; i++) {
+                begin = chrono::steady_clock::now();
+                funcArr[i](arr, size, 0, 100);
+                end = chrono::steady_clock::now();
+                timeDiff = chrono::duration_cast<chrono::microseconds>(end - begin);
+                fin << timeDiff.count() << '\t';
+            }
+
+            for (int i = 0; i < 3; i++) {
+                begin = chrono::steady_clock::now();
+                funcStepArr[i](arr, size, 0, 100, 8);
+                end = chrono::steady_clock::now();
+                timeDiff = chrono::duration_cast<chrono::microseconds>(end - begin);
+                fin << timeDiff.count() << '\t';
+            }
+
+            fin << '\n';
         }
     }
+
+    fin.close();
 }
 
 int main()
 {
     int size = 300;
-    //int* arr = new int[size];
 
     void(*funcArr[])(int*, int, int, int) = {LowToUpArray, UpToLowArray, RandomArray};
     void(*funcStepArr[])(int*, int, int, int, int) = {SawArray, StepArray, SinArray };
